@@ -1,0 +1,15 @@
+/*! Place your custom styles here */
+.slides li {
+  width: 100%; /* full width */
+  max-height: 700px;
+  /* center images in cells with flexbox */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.slides img {
+  display: block;
+  max-height: 100%;
+}

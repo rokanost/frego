@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title></title>
+        <title>FREGO HOUSE</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="css/iconsmind.css" rel="stylesheet" type="text/css" media="all" />
         <link href="css/bootstrap.css" rel="stylesheet" type="text/css" media="all" />
@@ -13,6 +13,7 @@
         <link href="https://fonts.googleapis.com/css?family=Open+Sans:200,300,400,400i,500,600,700" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css?family=Lato:400,400i,700%7CRubik:300,400,500" rel="stylesheet" type="text/css">
         <link href="css/font-rubiklato.css" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="css/litepicker.css"/>
 
     </head>
     <body data-smooth-scroll-offset="77">
@@ -21,12 +22,12 @@
             <section class="bg--dark space--xxs">
                 <div class="container">
                     <div class="cta cta--horizontal text-center-xs row">
-                        <div class="col-md-4">
+                        <div class="col-md-4 col-6">
                             <h4>FREGO HOUSE</h4>
                         </div>
-                        <div class="offset-md-5 col-md-3 text-right text-center-xs">
-                            <a class="btn btn--primary type--uppercase" href="#"> <span class="btn__text">
-                        REZERVACIJA</span> </a>
+                        <div class="offset-md-5 col-md-3 col-6 text-right text-center-xs">
+                            <a class="btn btn--primary type--uppercase" href="#reservation">
+                                <span class="btn__text">RESERVATION</span> </a>
                         </div>
                     </div>
                 </div>
@@ -49,7 +50,7 @@
                     </div>
                 </div>
             </section>
-            <section class="imagebg parallax" data-overlay="4">
+            <section class="imagebg" data-overlay="4">
                 <div class="background-image-holder"> <img alt="background" src="img/hero-1.jpg"> </div>
                 <div class="container">
                     <div class="row">
@@ -128,12 +129,85 @@
                 </div>
             </section>
         </div>
+
+
+        <div class="modal-container" data-modal-id="reservation">
+            <div class="modal-content section-modal">
+                <section class="unpad ">
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-md-6 col-12">
+                                <div class="feature feature-1 text-center">
+                                    <div class="feature__body boxed boxed--lg boxed--border">
+                                        <div class="modal-close modal-close-cross"></div>
+                                        <div class="text-block">
+                                            <h3>Reservation</h3>
+                                            <p>
+                                                Please select dates :)
+                                            </p>
+                                        </div>
+                                        <div style="margin:20px 0;">
+                                            <div id="litepicker"></div>
+                                        </div>
+                                        <form novalidate="true" class="form--active">
+                                            <input class="validate-required" type="text" name="NAME" placeholder="Your Name">
+                                            <input class="validate-required" type="text" name="MOBILE" placeholder="Mobile">
+                                            <input class="validate-required validate-email" type="email" name="EMAIL" placeholder="Email Address">
+                                            <div class="input-checkbox"><input class="validate-required" type="checkbox" id="input-assigned-1"><label for="input-assigned-1"></label></div>
+                                            <span>I have read and agree to the
+                                                <a href="#">terms and conditions</a>
+                                            </span>
+                                            <button type="submit" id="checkout-button" class="btn btn--primary type--uppercase">Continue</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <!--end feature-->
+                            </div>
+                        </div>
+                        <!--end of row-->
+                    </div>
+                    <!--end of container-->
+                </section>
+            </div>
+        </div>
+
+
         <script src="js/jquery-3.1.1.min.js"></script>
         <script src="js/flickity.min.js"></script>
-        <script src="js/parallax.js"></script>
         <script src="js/smooth-scroll.min.js"></script>
         <script src="js/scripts.js"></script>
+        <script src="js/litepicker.js"></script>
+        <script src="https://js.stripe.com/v3/"></script>
 
+        <script>
+            var picker = new Litepicker({ 
+              element: document.getElementById('litepicker'),
+              inlineMode: true,
+              singleMode: false,
+              plugins: ['mobilefriendly'],
+            });
+
+        </script>
+        <script>
+            var stripe = Stripe('pk_live_H9I6nzwQuvB2jOh4NvDXIDTd');
+            var checkoutButton = document.getElementById('checkout-button');
+
+            var DOMAIN = "https://rokanost.github.io/frego/";
+            checkoutButton.addEventListener('click', function() {
+                stripe.redirectToCheckout({
+                    mode: 'payment',
+                    lineItems: [{price: "price_1IyU3YCudxSE9anBXZKDfvJf", quantity: 2}],
+                    successUrl: DOMAIN + 'success.html',
+                    cancelUrl: DOMAIN + 'canceled.html',
+                }).then(function (result) {
+                    if (result.error) {
+                        // var displayError = document.getElementById('error-message');
+                        // displayError.textContent = result.error.message;
+                        alert(result.error.message)
+                    }
+                });
+            });
+        </script>
     </body>
 
 </html>

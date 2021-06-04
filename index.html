@@ -149,7 +149,7 @@
                                         <div style="margin:20px 0;">
                                             <div id="litepicker"></div>
                                         </div>
-                                        <form novalidate="true" class="form--active">
+                                        <form novalidate="true" id="checkout" class="form--active">
                                             <input class="validate-required" type="text" name="NAME" placeholder="Your Name">
                                             <input class="validate-required" type="text" name="MOBILE" placeholder="Mobile">
                                             <input class="validate-required validate-email" type="email" name="EMAIL" placeholder="Email Address">
@@ -157,7 +157,7 @@
                                             <span>I have read and agree to the
                                                 <a href="#">terms and conditions</a>
                                             </span>
-                                            <button type="submit" id="checkout-button" class="btn btn--primary type--uppercase">Continue</button>
+                                            <button type="submit" class="btn btn--primary type--uppercase">Continue</button>
                                         </form>
                                     </div>
                                 </div>
@@ -190,10 +190,11 @@
         </script>
         <script>
             var stripe = Stripe('pk_live_H9I6nzwQuvB2jOh4NvDXIDTd');
-            var checkoutButton = document.getElementById('checkout-button');
+            var checkoutForm = document.getElementById('checkout');
 
             var DOMAIN = "https://rokanost.github.io/frego/";
-            checkoutButton.addEventListener('click', function() {
+            checkoutForm.addEventListener('submit', function(e) {
+                e.preventDefault();
                 stripe.redirectToCheckout({
                     mode: 'payment',
                     lineItems: [{price: "price_1IyU3YCudxSE9anBXZKDfvJf", quantity: 2}],

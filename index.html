@@ -143,7 +143,7 @@
                                         <div class="text-block">
                                             <h3>Reservation</h3>
                                             <p>
-                                                Please select dates :)
+                                                Please select dates of your stay
                                             </p>
                                         </div>
                                         <div style="margin:20px 0;">
@@ -182,10 +182,22 @@
         <script>
             var picker = new Litepicker({ 
               element: document.getElementById('litepicker'),
+              minDate: new Date(),
               inlineMode: true,
               singleMode: false,
               plugins: ['mobilefriendly'],
             });
+
+            
+            var _MS_PER_DAY = 1000 * 60 * 60 * 24;
+            // a and b are javascript Date objects
+            function dateDiffInDays(a, b) {
+                // Discard the time and time-zone information.
+                var utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+                var utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+
+                return Math.floor((utc2 - utc1) / _MS_PER_DAY);
+            }
 
         </script>
         <script>
@@ -195,9 +207,27 @@
             var DOMAIN = "https://rokanost.github.io/frego/";
             checkoutForm.addEventListener('submit', function(e) {
                 e.preventDefault();
+                var from = picker.getStartDate();
+                var to = picker.getEndDate();
+                if(!from || !to) {
+                    alert("Please select dates");
+                    return;
+                }
+                var data = {
+                    from: from.dateInstance,
+                    to: to.dateInstance
+                };
+                var totalDays = dateDiffInDays(new Date(data.from), new Date(data.to));
+                if(!totalDays || totalDays < 1) {
+                    alert("You must select at least one day");
+                    return;
+                }
+
                 stripe.redirectToCheckout({
                     mode: 'payment',
-                    lineItems: [{price: "price_1IyU3YCudxSE9anBXZKDfvJf", quantity: 2}],
+                    customerEmail: $('[name=EMAIL]').val(),
+                    lineItems: [{price: "price_1IyU3YCudxSE9anBXZKDfvJf", quantity: totalDays}],
+                    clientReferenceId: JSON.stringify(data),
                     successUrl: DOMAIN + 'success.html',
                     cancelUrl: DOMAIN + 'canceled.html',
                 }).then(function (result) {

@@ -238,39 +238,26 @@
                 }
             });
 
-            
-            var _MS_PER_DAY = 1000 * 60 * 60 * 24;
-            // a and b are javascript Date objects
-            function dateDiffInDays(a, b) {
-                // Discard the time and time-zone information.
-                var utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-                var utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-
-                return Math.floor((utc2 - utc1) / _MS_PER_DAY);
-            }
-
+        
             /// STRIPE
             var stripe = Stripe(stripeKey)
             var checkoutForm = document.getElementById('checkout');
 
             checkoutForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                var from = pickerIn.getDate();
-                var to = pickerOut.getDate();
+                var from = $('#CHECK_IN').val(); //pickerIn.getDate();
+                var to = $('#CHECK_OUT').val(); //pickerOut.getDate();
                 if(!from || !to) {
                     alert("Please select dates of your stay");
                     return;
                 }
                 var data = {
-                    from: from.dateInstance,
-                    to: to.dateInstance,
+                    from: from, //.dateInstance,
+                    to: to, //.dateInstance,
                     mobile: $('[name=MOBILE]').val(),
                     email: $('[name=EMAIL]').val(),
                 };
-                // // Will be 1 by default if only from date selected
-                // var totalDays = 1 + dateDiffInDays(new Date(data.from), new Date(data.to));
-                // data.totalDays = totalDays;
-                
+
                 // Check availability before redirecting to checkout
                 $.ajax({
                     url: API_URL + '/bookings/create-session',

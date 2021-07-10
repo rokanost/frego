@@ -146,14 +146,16 @@
                                                 Please select dates of your stay
                                             </p>
                                         </div>
-                                        <div style="margin:20px 0;">
+                                        <!-- <div style="margin:20px 0;">
                                             <div id="litepicker"></div>
-                                        </div>
-                                        <form novalidate="true" id="checkout" class="form--active">
-                                            <input class="validate-required" type="text" name="NAME" placeholder="Your Name">
-                                            <input class="validate-required" type="text" name="MOBILE" placeholder="Mobile">
-                                            <input class="validate-required validate-email" type="email" name="EMAIL" placeholder="Email Address">
-                                            <div class="input-checkbox"><input class="validate-required" type="checkbox" id="input-assigned-1"><label for="input-assigned-1"></label></div>
+                                        </div> -->
+                                        <form id="checkout" class="form--active">
+                                            <input type="text" name="CHECK_IN" id="CHECK_IN" placeholder="Check In" required>
+                                            <input type="text" name="CHECK_OUT" id="CHECK_OUT" placeholder="Check Out" hidden required>
+                                            <input type="text" name="NAME" placeholder="Your Name" required>
+                                            <input type="text" name="MOBILE" placeholder="Mobile" required>
+                                            <input type="email" name="EMAIL" placeholder="Email Address" required>
+                                            <div class="input-checkbox"><input type="checkbox" id="input-assigned-1" required><label for="input-assigned-1"></label></div>
                                             <span>I have read and agree to the
                                                 <a href="#">terms and conditions</a>
                                             </span>
@@ -179,13 +181,61 @@
         <script src="js/litepicker.js"></script>
         <script src="https://js.stripe.com/v3/"></script>
 
+        <style>
+            :root {
+              /* change background color for .container__months */
+              --litepicker-is-locked-color: #ff1919 !important; 
+            }
+        </style>
+
         <script>
-            var picker = new Litepicker({ 
-              element: document.getElementById('litepicker'),
-              minDate: new Date(),
-              inlineMode: true,
-              singleMode: false,
-              plugins: ['mobilefriendly'],
+
+            var API_URL = 'https://europe-central2-midyear-module-316703.cloudfunctions.net/api'; // 'http://localhost:8080/api'//
+            var stripeKey = 'pk_test_oBLUfqGJO1bd9qrEAfOTattP' //'pk_live_H9I6nzwQuvB2jOh4NvDXIDTd'
+
+            var pickerIn,pickerOut;
+            function initDatePicker(lockDays) {
+                pickerIn = new Litepicker({ 
+                    element: document.getElementById('CHECK_IN'),
+                    minDate: new Date(),
+                    // disallowLockDaysInRange: true,
+                    lockDays: lockDays,
+                    // inlineMode: true,
+                    // singleMode: false,
+                    plugins: ['mobilefriendly'],
+                    setup: (picker) => {
+                        picker.on('selected', (date1, date2) => {
+                            // Init checkout
+                            var checkOut = $('#CHECK_OUT');
+                            if(pickerOut) pickerOut.destroy();
+                            $('#CHECK_OUT')[0].removeAttribute('hidden');
+                            checkOut.val('')
+                            pickerOut = new Litepicker({ 
+                                element: checkOut[0],
+                                minDate: new Date(date1.dateInstance.getTime() + 24*60*60*1000),
+                                // disallowLockDaysInRange: true,
+                                lockDays: lockDays,
+                                // inlineMode: true,
+                                // singleMode: false,
+                                plugins: ['mobilefriendly'],
+                            });
+                        });
+                    },
+                });
+            }
+
+            $.ajax({
+                url: API_URL + '/bookings',
+                crossDomain: true,
+                method: "GET",
+                cache: false,
+                dataType: 'json',
+                success: function(data){
+                    initDatePicker(data.dates)
+                },
+                error: function() {
+                    initDatePicker([]);
+                }
             });
 
             
@@ -199,42 +249,50 @@
                 return Math.floor((utc2 - utc1) / _MS_PER_DAY);
             }
 
-        </script>
-        <script>
-            var stripe = Stripe('pk_live_H9I6nzwQuvB2jOh4NvDXIDTd');
+            /// STRIPE
+            var stripe = Stripe(stripeKey)
             var checkoutForm = document.getElementById('checkout');
 
-            var DOMAIN = "https://rokanost.github.io/frego/";
             checkoutForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                var from = picker.getStartDate();
-                var to = picker.getEndDate();
+                var from = pickerIn.getDate();
+                var to = pickerOut.getDate();
                 if(!from || !to) {
-                    alert("Please select dates");
+                    alert("Please select dates of your stay");
                     return;
                 }
                 var data = {
                     from: from.dateInstance,
-                    to: to.dateInstance
+                    to: to.dateInstance,
+                    mobile: $('[name=MOBILE]').val(),
+                    email: $('[name=EMAIL]').val(),
                 };
-                var totalDays = dateDiffInDays(new Date(data.from), new Date(data.to));
-                if(!totalDays || totalDays < 1) {
-                    alert("You must select at least one day");
-                    return;
-                }
-
-                stripe.redirectToCheckout({
-                    mode: 'payment',
-                    customerEmail: $('[name=EMAIL]').val(),
-                    lineItems: [{price: "price_1IyU3YCudxSE9anBXZKDfvJf", quantity: totalDays}],
-                    clientReferenceId: JSON.stringify(data),
-                    successUrl: DOMAIN + 'success.html',
-                    cancelUrl: DOMAIN + 'canceled.html',
-                }).then(function (result) {
-                    if (result.error) {
-                        // var displayError = document.getElementById('error-message');
-                        // displayError.textContent = result.error.message;
-                        alert(result.error.message)
+                // // Will be 1 by default if only from date selected
+                // var totalDays = 1 + dateDiffInDays(new Date(data.from), new Date(data.to));
+                // data.totalDays = totalDays;
+                
+                // Check availability before redirecting to checkout
+                $.ajax({
+                    url: API_URL + '/bookings/create-session',
+                    crossDomain: true,
+                    method: "POST",
+                    cache: false,
+                    dataType: 'json',
+                    contentType:"application/json; charset=utf-8",
+                    data: JSON.stringify(data),
+                    success: function(data) {
+                        stripe.redirectToCheckout({
+                            sessionId: data.id
+                        }).then(function (result) {
+                            if (result.error) {
+                                // var displayError = document.getElementById('error-message');
+                                // displayError.textContent = result.error.message;
+                                alert(result.error.message)
+                            }
+                        });
+                    },
+                    error: function() {
+                        alert('Oops! Something went wrong')
                     }
                 });
             });
